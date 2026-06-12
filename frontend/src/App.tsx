@@ -6,6 +6,7 @@ import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import HomePage from "./pages/HomePage";
+import DocumentsPage from "./pages/DocumentsPage";
 import UsersPage from "./pages/UsersPage";
 import RolesPage from "./pages/RolesPage";
 
@@ -29,6 +30,7 @@ export default function App() {
         >
           <Route index element={<Navigate to="/app/home" replace />} />
           <Route path="home" element={<HomePage />} />
+          <Route path="documents" element={<DocumentsPage />} />
           <Route
             path="users"
             element={

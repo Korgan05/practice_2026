@@ -79,6 +79,32 @@ export interface TokenOut {
   token_type: string;
 }
 
+export interface Category {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
+export interface DocTag {
+  id: number;
+  name: string;
+  categories: Category[];
+}
+
+export interface DocumentItem {
+  id: number;
+  original_filename: string;
+  content_type: string | null;
+  size: number;
+  created_at: string;
+  uploaded_by: string | null;
+  tags: DocTag[];
+}
+
+function qs(name: string, ids: number[]): string {
+  return ids.map((id) => `${name}=${id}`).join("&");
+}
+
 export const api = {
   register: (body: { full_name: string; email: string; password: string }) =>
     request<MessageOut>("/auth/register", {
@@ -106,4 +132,62 @@ export const api = {
     }),
 
   listRoles: () => request<Role[]>("/roles"),
+
+  // ---- Хранилище файлов (Задача 5) ----
+  listCategories: () => request<Category[]>("/categories"),
+
+  createCategory: (body: { name: string; description?: string }) =>
+    request<Category>("/categories", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  // category_ids — зависимость категория→теги при поиске
+  listTags: (categoryIds: number[] = []) =>
+    request<DocTag[]>(
+      categoryIds.length ? `/tags?${qs("category_ids", categoryIds)}` : "/tags"
+    ),
+
+  createTag: (body: { name: string; category_ids: number[] }) =>
+    request<DocTag>("/tags", { method: "POST", body: JSON.stringify(body) }),
+
+  searchDocuments: (tagIds: number[] = []) =>
+    request<DocumentItem[]>(
+      tagIds.length ? `/documents?${qs("tag_ids", tagIds)}` : "/documents"
+    ),
+
+  uploadDocument: async (file: File, tagIds: number[]): Promise<DocumentItem> => {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("tag_ids", tagIds.join(","));
+    const token = tokenStore.get();
+    const res = await fetch("/api/documents", {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    });
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : null;
+    if (!res.ok) {
+      throw { status: res.status, message: extractError(data) ?? `Ошибка ${res.status}` } as ApiError;
+    }
+    return data as DocumentItem;
+  },
+
+  downloadDocument: async (doc: DocumentItem): Promise<void> => {
+    const token = tokenStore.get();
+    const res = await fetch(`/api/documents/${doc.id}/download`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw { status: res.status, message: "Не удалось скачать файл" } as ApiError;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = doc.original_filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
 };

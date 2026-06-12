@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 12  # 12 часов
 
+    # Хранилище файлов (Задача 5)
+    UPLOAD_DIR: str = "uploads"
+    MAX_UPLOAD_MB: int = 25
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

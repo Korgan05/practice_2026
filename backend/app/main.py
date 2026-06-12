@@ -2,7 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.auth import router as auth_router
+from app.api.categories import router as categories_router
+from app.api.documents import router as documents_router
 from app.api.roles import router as roles_router
+from app.api.tags import router as tags_router
 from app.api.users import router as users_router
 
 app = FastAPI(title="practice_2026 API", version="0.1.0")
@@ -21,6 +24,9 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
 app.include_router(roles_router, prefix="/api")
+app.include_router(categories_router, prefix="/api")
+app.include_router(tags_router, prefix="/api")
+app.include_router(documents_router, prefix="/api")
 
 
 @app.get("/api/health", tags=["health"])

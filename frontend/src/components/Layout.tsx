@@ -23,6 +23,9 @@ export default function Layout() {
             <NavLink to="/app/home" className="nav-link">
               Главная
             </NavLink>
+            <NavLink to="/app/documents" className="nav-link">
+              Документы
+            </NavLink>
           </div>
 
           {/* Настройки — только Администратор */}
