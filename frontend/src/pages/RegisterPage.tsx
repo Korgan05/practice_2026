@@ -49,6 +49,7 @@ export default function RegisterPage() {
 
   if (done) {
     return (
+      <div className="app-shell">
       <div className="card">
         <h1>Проверьте почту</h1>
         <p className="muted">
@@ -65,10 +66,12 @@ export default function RegisterPage() {
           Перейти ко входу
         </button>
       </div>
+      </div>
     );
   }
 
   return (
+    <div className="app-shell">
     <form className="card" onSubmit={handleRegister} noValidate>
       <h1>Регистрация</h1>
 
@@ -132,5 +135,6 @@ export default function RegisterPage() {
         </button>
       </div>
     </form>
+    </div>
   );
 }

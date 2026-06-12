@@ -35,6 +35,7 @@ export default function VerifyEmailPage() {
   }, [token]);
 
   return (
+    <div className="app-shell">
     <div className="card">
       <h1>Подтверждение email</h1>
       {status === "loading" && <p className="muted">Проверяем ссылку…</p>}
@@ -46,6 +47,7 @@ export default function VerifyEmailPage() {
           Перейти ко входу
         </button>
       )}
+    </div>
     </div>
   );
 }

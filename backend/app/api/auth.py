@@ -4,15 +4,23 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
 from app.config import settings
 from app.core.security import (
+    create_access_token,
     generate_token,
     hash_password,
     verify_password,
 )
 from app.database import get_db
 from app.models import EmailVerificationToken, User
-from app.schemas.auth import LoginIn, MessageOut, RegisterIn, UserOut
+from app.schemas.auth import (
+    LoginIn,
+    MessageOut,
+    RegisterIn,
+    TokenOut,
+    UserOut,
+)
 from app.services.email import send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -96,12 +104,18 @@ def verify_email(
     return MessageOut(message="Email подтверждён. Теперь вы можете войти.")
 
 
-@router.post("/login", response_model=UserOut)
-def login(payload: LoginIn, db: Session = Depends(get_db)) -> User:
-    """Заглушка входа (полноценная сессия/токены — в следующих задачах)."""
+@router.post("/login", response_model=TokenOut)
+def login(payload: LoginIn, db: Session = Depends(get_db)) -> TokenOut:
+    """Аутентификация: проверяет логин/пароль и выдаёт JWT."""
     user = db.scalar(select(User).where(User.login == payload.login.lower()))
     if user is None or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Неверный логин или пароль")
     if not user.is_email_verified:
         raise HTTPException(status_code=403, detail="Email не подтверждён")
-    return user
+    return TokenOut(access_token=create_access_token(user.id))
+
+
+@router.get("/me", response_model=UserOut)
+def me(current: User = Depends(get_current_user)) -> User:
+    """Текущий пользователь (по JWT) — для фронта: кто вошёл и его роль."""
+    return current

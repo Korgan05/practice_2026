@@ -34,6 +34,19 @@ class MessageOut(BaseModel):
     message: str
 
 
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class RoleOut(BaseModel):
+    id: int
+    name: str
+    description: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
 class UserOut(BaseModel):
     id: int
     full_name: str
@@ -41,5 +54,10 @@ class UserOut(BaseModel):
     login: str
     is_email_verified: bool
     is_active: bool
+    role: RoleOut | None = None
 
     model_config = {"from_attributes": True}
+
+
+class UserRoleUpdate(BaseModel):
+    role_id: int | None = None

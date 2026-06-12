@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
     EMAIL_TOKEN_TTL_HOURS: int = 24
 
+    # JWT
+    SECRET_KEY: str = "CHANGE_ME_dev_secret_key_practice_2026"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 12  # 12 часов
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
