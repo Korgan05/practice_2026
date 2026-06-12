@@ -8,6 +8,7 @@ import VerifyEmailPage from "./pages/VerifyEmailPage";
 import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/ProfilePage";
 import DocumentsPage from "./pages/DocumentsPage";
+import CounteragentsPage from "./pages/CounteragentsPage";
 import UsersPage from "./pages/UsersPage";
 import RolesPage from "./pages/RolesPage";
 
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="home" element={<HomePage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="documents" element={<DocumentsPage />} />
+          <Route path="counteragents" element={<CounteragentsPage />} />
           <Route
             path="users"
             element={

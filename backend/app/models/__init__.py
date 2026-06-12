@@ -5,6 +5,7 @@ from app.models.associations import document_tags, tag_categories
 from app.models.category import Category
 from app.models.tag import Tag
 from app.models.document import Document
+from app.models.counteragent import Counteragent
 
 __all__ = [
     "Role",
@@ -13,6 +14,7 @@ __all__ = [
     "Category",
     "Tag",
     "Document",
+    "Counteragent",
     "tag_categories",
     "document_tags",
 ]

@@ -118,6 +118,21 @@ function qs(name: string, ids: number[]): string {
   return ids.map((id) => `${name}=${id}`).join("&");
 }
 
+export interface Counteragent {
+  id: number;
+  name: string;
+  inn_bin: string | null;
+  kpp: string | null;
+  address: string | null;
+  contact_person: string | null;
+  phone: string | null;
+  email: string | null;
+  bank_details: string | null;
+  created_at: string;
+}
+
+export type CounteragentInput = Omit<Counteragent, "id" | "created_at">;
+
 export const api = {
   register: (body: { full_name: string; email: string; password: string }) =>
     request<MessageOut>("/auth/register", {
@@ -189,6 +204,19 @@ export const api = {
     }
     return data as DocumentItem;
   },
+
+  // ---- Контрагенты (Задача 7) ----
+  listCounteragents: (q = "") =>
+    request<Counteragent[]>(q ? `/counteragents?q=${encodeURIComponent(q)}` : "/counteragents"),
+
+  createCounteragent: (body: CounteragentInput) =>
+    request<Counteragent>("/counteragents", { method: "POST", body: JSON.stringify(body) }),
+
+  updateCounteragent: (id: number, body: CounteragentInput) =>
+    request<Counteragent>(`/counteragents/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+
+  deleteCounteragent: (id: number) =>
+    request<void>(`/counteragents/${id}`, { method: "DELETE" }),
 
   downloadDocument: async (doc: DocumentItem): Promise<void> => {
     const token = tokenStore.get();
