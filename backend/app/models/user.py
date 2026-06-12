@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -21,6 +21,12 @@ class User(Base):
 
     is_email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Профиль (Задача 6)
+    position: Mapped[str | None] = mapped_column(String(150), nullable=True)  # Должность
+    department: Mapped[str | None] = mapped_column(String(150), nullable=True)  # Подразделение
+    phone: Mapped[str | None] = mapped_column(String(50), nullable=True)  # Телефон
+    birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)  # Дата рождения
 
     role_id: Mapped[int | None] = mapped_column(
         ForeignKey("roles.id", ondelete="SET NULL"), nullable=True

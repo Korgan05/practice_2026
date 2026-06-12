@@ -72,6 +72,19 @@ export interface User {
   is_email_verified: boolean;
   is_active: boolean;
   role: Role | null;
+  // Профиль (Задача 6)
+  position: string | null;
+  department: string | null;
+  phone: string | null;
+  birth_date: string | null;
+}
+
+export interface ProfileUpdate {
+  full_name?: string;
+  position?: string | null;
+  department?: string | null;
+  phone?: string | null;
+  birth_date?: string | null;
 }
 
 export interface TokenOut {
@@ -122,6 +135,9 @@ export const api = {
     }),
 
   me: () => request<User>("/auth/me"),
+
+  updateProfile: (body: ProfileUpdate) =>
+    request<User>("/auth/me", { method: "PATCH", body: JSON.stringify(body) }),
 
   listUsers: () => request<User[]>("/users"),
 

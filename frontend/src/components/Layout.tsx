@@ -26,6 +26,9 @@ export default function Layout() {
             <NavLink to="/app/documents" className="nav-link">
               Документы
             </NavLink>
+            <NavLink to="/app/profile" className="nav-link">
+              Профиль
+            </NavLink>
           </div>
 
           {/* Настройки — только Администратор */}

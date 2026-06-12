@@ -17,6 +17,7 @@ from app.models import EmailVerificationToken, User
 from app.schemas.auth import (
     LoginIn,
     MessageOut,
+    ProfileUpdate,
     RegisterIn,
     TokenOut,
     UserOut,
@@ -118,4 +119,24 @@ def login(payload: LoginIn, db: Session = Depends(get_db)) -> TokenOut:
 @router.get("/me", response_model=UserOut)
 def me(current: User = Depends(get_current_user)) -> User:
     """Текущий пользователь (по JWT) — для фронта: кто вошёл и его роль."""
+    return current
+
+
+@router.patch("/me", response_model=UserOut)
+def update_me(
+    payload: ProfileUpdate,
+    current: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    """Редактирование своего профиля (Задача 6)."""
+    data = payload.model_dump(exclude_unset=True)
+    if "full_name" in data:
+        name = (data["full_name"] or "").strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="ФИО не может быть пустым")
+        data["full_name"] = name
+    for field, value in data.items():
+        setattr(current, field, value)
+    db.commit()
+    db.refresh(current)
     return current

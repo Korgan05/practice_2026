@@ -13,6 +13,7 @@ interface AuthState {
   isAdmin: boolean;
   login: (login: string, password: string) => Promise<void>;
   logout: () => void;
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -49,10 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
+  async function refresh() {
+    setUser(await api.me());
+  }
+
   const isAdmin = user?.role?.name === ADMIN_ROLE;
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, login, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );
