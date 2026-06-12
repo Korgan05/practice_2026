@@ -10,6 +10,7 @@ import ProfilePage from "./pages/ProfilePage";
 import DocumentsPage from "./pages/DocumentsPage";
 import CounteragentsPage from "./pages/CounteragentsPage";
 import ContractsPage from "./pages/ContractsPage";
+import ProjectsPage from "./pages/ProjectsPage";
 import UsersPage from "./pages/UsersPage";
 import RolesPage from "./pages/RolesPage";
 
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="counteragents" element={<CounteragentsPage />} />
           <Route path="contracts" element={<ContractsPage />} />
+          <Route path="projects" element={<ProjectsPage />} />
           <Route
             path="users"
             element={

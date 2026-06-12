@@ -133,6 +133,45 @@ export interface Counteragent {
 
 export type CounteragentInput = Omit<Counteragent, "id" | "created_at">;
 
+export interface UserBrief {
+  id: number;
+  full_name: string;
+}
+
+export type ProjectStatus = "planned" | "active" | "completed" | "suspended";
+
+export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
+  planned: "Планируется",
+  active: "В работе",
+  completed: "Завершён",
+  suspended: "Приостановлен",
+};
+
+export interface Project {
+  id: number;
+  name: string;
+  code: string | null;
+  description: string | null;
+  status: ProjectStatus;
+  start_date: string | null;
+  end_date: string | null;
+  manager_id: number | null;
+  manager: { id: number; full_name: string } | null;
+  contracts: { id: number; number: string }[];
+  created_at: string;
+}
+
+export interface ProjectInput {
+  name: string;
+  code: string | null;
+  description: string | null;
+  status: ProjectStatus;
+  start_date: string | null;
+  end_date: string | null;
+  manager_id: number | null;
+  contract_ids: number[];
+}
+
 export type ContractStatus = "draft" | "active" | "completed";
 
 export const CONTRACT_STATUS_LABELS: Record<ContractStatus, string> = {
@@ -269,6 +308,21 @@ export const api = {
 
   deleteContract: (id: number) =>
     request<void>(`/contracts/${id}`, { method: "DELETE" }),
+
+  // ---- Проекты (Задача 10) ----
+  listUsersBrief: () => request<UserBrief[]>("/users/brief"),
+
+  listProjects: (q = "") =>
+    request<Project[]>(q ? `/projects?q=${encodeURIComponent(q)}` : "/projects"),
+
+  createProject: (body: ProjectInput) =>
+    request<Project>("/projects", { method: "POST", body: JSON.stringify(body) }),
+
+  updateProject: (id: number, body: ProjectInput) =>
+    request<Project>(`/projects/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+
+  deleteProject: (id: number) =>
+    request<void>(`/projects/${id}`, { method: "DELETE" }),
 
   downloadDocument: async (doc: DocumentItem): Promise<void> => {
     const token = tokenStore.get();

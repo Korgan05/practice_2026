@@ -41,3 +41,19 @@ contract_documents = Table(
         primary_key=True,
     ),
 )
+
+# Проекты <-> Договоры (M:M, Задача 10)
+project_contracts = Table(
+    "project_contracts",
+    Base.metadata,
+    Column(
+        "project_id",
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "contract_id",
+        ForeignKey("contracts.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
