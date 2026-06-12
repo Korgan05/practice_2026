@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   api,
   ApiError,
@@ -7,7 +7,10 @@ import {
   ContractStatus,
   CONTRACT_STATUS_LABELS,
   Counteragent,
+  DocumentItem,
 } from "../api/client";
+
+const CONTRACT_TAG = "Договор";
 
 const EMPTY: ContractInput = {
   number: "",
@@ -20,6 +23,7 @@ const EMPTY: ContractInput = {
   start_date: null,
   end_date: null,
   comment: "",
+  document_ids: [],
 };
 
 export default function ContractsPage() {
@@ -33,14 +37,29 @@ export default function ContractsPage() {
   const [editId, setEditId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
 
+  // Документы с тегом «Договор» (Задача 9)
+  const [dogovorTagId, setDogovorTagId] = useState<number | null>(null);
+  const [dogovorDocs, setDogovorDocs] = useState<DocumentItem[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  async function reloadDogovorDocs(tagId: number | null) {
+    if (tagId == null) return;
+    setDogovorDocs(await api.searchDocuments([tagId]));
+  }
+
   async function load(q = "") {
     try {
-      const [contracts, cas] = await Promise.all([
+      const [contracts, cas, tags] = await Promise.all([
         api.listContracts(q),
         api.listCounteragents(),
+        api.listTags(),
       ]);
       setItems(contracts);
       setCounteragents(cas);
+      const tag = tags.find((t) => t.name === CONTRACT_TAG) ?? null;
+      setDogovorTagId(tag?.id ?? null);
+      await reloadDogovorDocs(tag?.id ?? null);
       setError(null);
     } catch (e) {
       setError((e as ApiError).message);
@@ -74,9 +93,38 @@ export default function ContractsPage() {
       start_date: c.start_date,
       end_date: c.end_date,
       comment: c.comment ?? "",
+      document_ids: c.documents.map((d) => d.id),
     });
     setEditId(c.id);
     setShowForm(true);
+  }
+
+  function toggleDoc(id: number) {
+    setForm((f) => ({
+      ...f,
+      document_ids: f.document_ids.includes(id)
+        ? f.document_ids.filter((x) => x !== id)
+        : [...f.document_ids, id],
+    }));
+  }
+
+  // Загрузить новый файл с тегом «Договор» и сразу прикрепить к договору.
+  async function handleUploadAndAttach() {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return setError("Выберите файл");
+    if (dogovorTagId == null) return setError("Тег «Договор» не найден");
+    setUploading(true);
+    try {
+      const doc = await api.uploadDocument(file, [dogovorTagId]);
+      if (fileRef.current) fileRef.current.value = "";
+      await reloadDogovorDocs(dogovorTagId);
+      setForm((f) => ({ ...f, document_ids: [...f.document_ids, doc.id] }));
+      flash(`Файл «${doc.original_filename}» загружен и прикреплён`);
+    } catch (e) {
+      setError((e as ApiError).message);
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleSave(e: FormEvent) {
@@ -216,6 +264,46 @@ export default function ContractsPage() {
               <input value={form.comment ?? ""} onChange={set("comment")} />
             </label>
           </div>
+
+          {/* Документы договора (Задача 9) — файлы с тегом «Договор» */}
+          <div className="doc-section">
+            <div className="field-label">Документы (тег «Договор»):</div>
+            <div className="chips">
+              {dogovorDocs.map((d) => (
+                <label
+                  key={d.id}
+                  className={`chip ${form.document_ids.includes(d.id) ? "on" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.document_ids.includes(d.id)}
+                    onChange={() => toggleDoc(d.id)}
+                  />
+                  {d.original_filename}
+                </label>
+              ))}
+              {dogovorDocs.length === 0 && (
+                <span className="muted">Нет файлов с тегом «Договор»</span>
+              )}
+            </div>
+
+            <div className="upload-row">
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".doc,.docx,.xls,.xlsx,.pdf,.zip,.rar,.7z,.tar,.gz"
+              />
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleUploadAndAttach}
+                disabled={uploading}
+              >
+                {uploading ? "Загрузка…" : "Загрузить и прикрепить"}
+              </button>
+            </div>
+          </div>
+
           <div className="actions">
             <button className="btn-primary" type="submit">
               Сохранить
@@ -236,6 +324,7 @@ export default function ContractsPage() {
             <th>Сумма</th>
             <th>Статус</th>
             <th>Заключён</th>
+            <th>Документы</th>
             <th></th>
           </tr>
         </thead>
@@ -254,6 +343,15 @@ export default function ContractsPage() {
                 </span>
               </td>
               <td>{c.conclusion_date ?? "—"}</td>
+              <td>
+                {c.documents.length === 0
+                  ? "—"
+                  : c.documents.map((d) => (
+                      <span key={d.id} className="tag-badge">
+                        {d.original_filename}
+                      </span>
+                    ))}
+              </td>
               <td className="row-actions">
                 <button className="btn-link" onClick={() => startEdit(c)}>
                   Редактировать

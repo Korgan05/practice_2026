@@ -155,6 +155,7 @@ export interface Contract {
   end_date: string | null;
   comment: string | null;
   created_at: string;
+  documents: { id: number; original_filename: string }[];
 }
 
 export interface ContractInput {
@@ -168,6 +169,7 @@ export interface ContractInput {
   start_date: string | null;
   end_date: string | null;
   comment: string | null;
+  document_ids: number[];
 }
 
 export const api = {

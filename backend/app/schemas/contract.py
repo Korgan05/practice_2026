@@ -13,6 +13,13 @@ class CounteragentBrief(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DocumentBrief(BaseModel):
+    id: int
+    original_filename: str
+
+    model_config = {"from_attributes": True}
+
+
 class ContractBase(BaseModel):
     number: str = Field(..., min_length=1, max_length=100)
     subject: str | None = Field(default=None, max_length=500)
@@ -34,16 +41,17 @@ class ContractBase(BaseModel):
 
 
 class ContractCreate(ContractBase):
-    pass
+    document_ids: list[int] = Field(default_factory=list)
 
 
 class ContractUpdate(ContractBase):
-    pass
+    document_ids: list[int] = Field(default_factory=list)
 
 
 class ContractOut(ContractBase):
     id: int
     created_at: datetime
     counteragent: CounteragentBrief | None = None
+    documents: list[DocumentBrief] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}

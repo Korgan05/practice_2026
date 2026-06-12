@@ -25,3 +25,19 @@ document_tags = Table(
     ),
     Column("tag_id", ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
 )
+
+# Договоры <-> Документы (M:M, Задача 9)
+contract_documents = Table(
+    "contract_documents",
+    Base.metadata,
+    Column(
+        "contract_id",
+        ForeignKey("contracts.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "document_id",
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
