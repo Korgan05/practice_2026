@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.auth import router as auth_router
 from app.api.categories import router as categories_router
+from app.api.contracts import router as contracts_router
 from app.api.counteragents import router as counteragents_router
 from app.api.documents import router as documents_router
 from app.api.roles import router as roles_router
@@ -29,6 +30,7 @@ app.include_router(categories_router, prefix="/api")
 app.include_router(tags_router, prefix="/api")
 app.include_router(documents_router, prefix="/api")
 app.include_router(counteragents_router, prefix="/api")
+app.include_router(contracts_router, prefix="/api")
 
 
 @app.get("/api/health", tags=["health"])

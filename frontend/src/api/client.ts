@@ -133,6 +133,43 @@ export interface Counteragent {
 
 export type CounteragentInput = Omit<Counteragent, "id" | "created_at">;
 
+export type ContractStatus = "draft" | "active" | "completed";
+
+export const CONTRACT_STATUS_LABELS: Record<ContractStatus, string> = {
+  draft: "Черновик",
+  active: "Действует",
+  completed: "Завершён",
+};
+
+export interface Contract {
+  id: number;
+  number: string;
+  subject: string | null;
+  counteragent_id: number | null;
+  counteragent: { id: number; name: string } | null;
+  amount: string | number | null;
+  currency: string | null;
+  status: ContractStatus;
+  conclusion_date: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  comment: string | null;
+  created_at: string;
+}
+
+export interface ContractInput {
+  number: string;
+  subject: string | null;
+  counteragent_id: number | null;
+  amount: number | null;
+  currency: string | null;
+  status: ContractStatus;
+  conclusion_date: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  comment: string | null;
+}
+
 export const api = {
   register: (body: { full_name: string; email: string; password: string }) =>
     request<MessageOut>("/auth/register", {
@@ -217,6 +254,19 @@ export const api = {
 
   deleteCounteragent: (id: number) =>
     request<void>(`/counteragents/${id}`, { method: "DELETE" }),
+
+  // ---- Договоры (Задача 8) ----
+  listContracts: (q = "") =>
+    request<Contract[]>(q ? `/contracts?q=${encodeURIComponent(q)}` : "/contracts"),
+
+  createContract: (body: ContractInput) =>
+    request<Contract>("/contracts", { method: "POST", body: JSON.stringify(body) }),
+
+  updateContract: (id: number, body: ContractInput) =>
+    request<Contract>(`/contracts/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+
+  deleteContract: (id: number) =>
+    request<void>(`/contracts/${id}`, { method: "DELETE" }),
 
   downloadDocument: async (doc: DocumentItem): Promise<void> => {
     const token = tokenStore.get();

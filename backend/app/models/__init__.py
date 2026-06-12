@@ -6,6 +6,7 @@ from app.models.category import Category
 from app.models.tag import Tag
 from app.models.document import Document
 from app.models.counteragent import Counteragent
+from app.models.contract import Contract
 
 __all__ = [
     "Role",
@@ -15,6 +16,7 @@ __all__ = [
     "Tag",
     "Document",
     "Counteragent",
+    "Contract",
     "tag_categories",
     "document_tags",
 ]

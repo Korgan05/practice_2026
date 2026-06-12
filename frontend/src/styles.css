@@ -441,3 +441,35 @@ a {
   gap: 6px;
   white-space: nowrap;
 }
+
+/* ---- Договоры (Задача 8) ---- */
+.status {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-draft {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.status-active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status-completed {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.panel select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}

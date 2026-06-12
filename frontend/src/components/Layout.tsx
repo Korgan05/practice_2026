@@ -29,6 +29,9 @@ export default function Layout() {
             <NavLink to="/app/counteragents" className="nav-link">
               Контрагенты
             </NavLink>
+            <NavLink to="/app/contracts" className="nav-link">
+              Договоры
+            </NavLink>
             <NavLink to="/app/profile" className="nav-link">
               Профиль
             </NavLink>

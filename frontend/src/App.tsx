@@ -9,6 +9,7 @@ import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/ProfilePage";
 import DocumentsPage from "./pages/DocumentsPage";
 import CounteragentsPage from "./pages/CounteragentsPage";
+import ContractsPage from "./pages/ContractsPage";
 import UsersPage from "./pages/UsersPage";
 import RolesPage from "./pages/RolesPage";
 
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="counteragents" element={<CounteragentsPage />} />
+          <Route path="contracts" element={<ContractsPage />} />
           <Route
             path="users"
             element={
