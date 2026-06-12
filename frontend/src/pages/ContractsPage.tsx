@@ -3,12 +3,15 @@ import {
   api,
   ApiError,
   Contract,
+  ContractApproval,
   ContractInput,
   ContractStatus,
   CONTRACT_STATUS_LABELS,
   Counteragent,
   DocumentItem,
+  UserBrief,
 } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
 
 const CONTRACT_TAG = "Договор";
 
@@ -24,9 +27,11 @@ const EMPTY: ContractInput = {
   end_date: null,
   comment: "",
   document_ids: [],
+  participant_ids: [],
 };
 
 export default function ContractsPage() {
+  const { user } = useAuth();
   const [items, setItems] = useState<Contract[]>([]);
   const [counteragents, setCounteragents] = useState<Counteragent[]>([]);
   const [search, setSearch] = useState("");
@@ -43,6 +48,11 @@ export default function ContractsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Участники и согласование (Задача 11)
+  const [users, setUsers] = useState<UserBrief[]>([]);
+  const [approval, setApproval] = useState<ContractApproval | null>(null);
+  const [approvalNumber, setApprovalNumber] = useState<string>("");
+
   async function reloadDogovorDocs(tagId: number | null) {
     if (tagId == null) return;
     setDogovorDocs(await api.searchDocuments([tagId]));
@@ -50,13 +60,15 @@ export default function ContractsPage() {
 
   async function load(q = "") {
     try {
-      const [contracts, cas, tags] = await Promise.all([
+      const [contracts, cas, tags, brief] = await Promise.all([
         api.listContracts(q),
         api.listCounteragents(),
         api.listTags(),
+        api.listUsersBrief(),
       ]);
       setItems(contracts);
       setCounteragents(cas);
+      setUsers(brief);
       const tag = tags.find((t) => t.name === CONTRACT_TAG) ?? null;
       setDogovorTagId(tag?.id ?? null);
       await reloadDogovorDocs(tag?.id ?? null);
@@ -94,9 +106,38 @@ export default function ContractsPage() {
       end_date: c.end_date,
       comment: c.comment ?? "",
       document_ids: c.documents.map((d) => d.id),
+      participant_ids: c.participants.map((p) => p.id),
     });
     setEditId(c.id);
     setShowForm(true);
+  }
+
+  function toggleParticipant(id: number) {
+    setForm((f) => ({
+      ...f,
+      participant_ids: f.participant_ids.includes(id)
+        ? f.participant_ids.filter((x) => x !== id)
+        : [...f.participant_ids, id],
+    }));
+  }
+
+  async function openApprovals(c: Contract) {
+    try {
+      setApprovalNumber(c.number);
+      setApproval(await api.getContractApprovals(c.id));
+      setError(null);
+    } catch (e) {
+      setError((e as ApiError).message);
+    }
+  }
+
+  async function approveDoc(docId: number) {
+    if (approval == null) return;
+    try {
+      setApproval(await api.approveDocument(approval.contract_id, docId));
+    } catch (e) {
+      setError((e as ApiError).message);
+    }
   }
 
   function toggleDoc(id: number) {
@@ -304,6 +345,26 @@ export default function ContractsPage() {
             </div>
           </div>
 
+          {/* Участники договора (Задача 11) */}
+          <div className="doc-section">
+            <div className="field-label">Участники договора:</div>
+            <div className="chips">
+              {users.map((u) => (
+                <label
+                  key={u.id}
+                  className={`chip ${form.participant_ids.includes(u.id) ? "on" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.participant_ids.includes(u.id)}
+                    onChange={() => toggleParticipant(u.id)}
+                  />
+                  {u.full_name}
+                </label>
+              ))}
+            </div>
+          </div>
+
           <div className="actions">
             <button className="btn-primary" type="submit">
               Сохранить
@@ -313,6 +374,64 @@ export default function ContractsPage() {
             </button>
           </div>
         </form>
+      )}
+
+      {approval && (
+        <div className="modal-overlay" onClick={() => setApproval(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Согласование документов — {approvalNumber}</h2>
+            {!approval.current_user_is_participant && (
+              <div className="muted">
+                Вы не участник этого договора — согласование недоступно (только просмотр).
+              </div>
+            )}
+            {approval.documents.length === 0 && (
+              <div className="muted">К договору не прикреплены документы.</div>
+            )}
+            {approval.documents.map((doc) => {
+              const myApproved = doc.participants.some(
+                (p) => p.user.id === user?.id && p.approved
+              );
+              return (
+                <div key={doc.document.id} className="approval-doc">
+                  <div className="approval-doc-head">
+                    <b>{doc.document.original_filename}</b>
+                    <span className="muted">
+                      согласовали {doc.approved_count} из {doc.total}
+                    </span>
+                  </div>
+                  <ul className="approval-list">
+                    {doc.participants.map((p) => (
+                      <li key={p.user.id} className={p.approved ? "ok" : ""}>
+                        {p.approved ? "✓" : "•"} {p.user.full_name}
+                        {p.approved_at && (
+                          <span className="muted">
+                            {" "}
+                            ({new Date(p.approved_at).toLocaleString("ru-RU")})
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {approval.current_user_is_participant && (
+                    <button
+                      className="btn-primary"
+                      disabled={myApproved}
+                      onClick={() => approveDoc(doc.document.id)}
+                    >
+                      {myApproved ? "Вы согласовали" : "Согласовать"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+            <div className="actions">
+              <button className="btn-secondary" onClick={() => setApproval(null)}>
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <table className="table">
@@ -353,6 +472,9 @@ export default function ContractsPage() {
                     ))}
               </td>
               <td className="row-actions">
+                <button className="btn-link" onClick={() => openApprovals(c)}>
+                  Согласование
+                </button>
                 <button className="btn-link" onClick={() => startEdit(c)}>
                   Редактировать
                 </button>

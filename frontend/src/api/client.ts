@@ -195,6 +195,26 @@ export interface Contract {
   comment: string | null;
   created_at: string;
   documents: { id: number; original_filename: string }[];
+  participants: UserBrief[];
+}
+
+export interface ParticipantApproval {
+  user: UserBrief;
+  approved: boolean;
+  approved_at: string | null;
+}
+
+export interface DocumentApproval {
+  document: { id: number; original_filename: string };
+  participants: ParticipantApproval[];
+  approved_count: number;
+  total: number;
+}
+
+export interface ContractApproval {
+  contract_id: number;
+  current_user_is_participant: boolean;
+  documents: DocumentApproval[];
 }
 
 export interface ContractInput {
@@ -209,6 +229,7 @@ export interface ContractInput {
   end_date: string | null;
   comment: string | null;
   document_ids: number[];
+  participant_ids: number[];
 }
 
 export const api = {
@@ -308,6 +329,16 @@ export const api = {
 
   deleteContract: (id: number) =>
     request<void>(`/contracts/${id}`, { method: "DELETE" }),
+
+  // ---- Согласование документов (Задача 11) ----
+  getContractApprovals: (contractId: number) =>
+    request<ContractApproval>(`/contracts/${contractId}/approvals`),
+
+  approveDocument: (contractId: number, docId: number) =>
+    request<ContractApproval>(
+      `/contracts/${contractId}/documents/${docId}/approve`,
+      { method: "POST" }
+    ),
 
   // ---- Проекты (Задача 10) ----
   listUsersBrief: () => request<UserBrief[]>("/users/brief"),

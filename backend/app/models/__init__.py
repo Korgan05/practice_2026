@@ -8,6 +8,7 @@ from app.models.document import Document
 from app.models.counteragent import Counteragent
 from app.models.contract import Contract
 from app.models.project import Project
+from app.models.document_approval import DocumentApproval
 
 __all__ = [
     "Role",
@@ -19,6 +20,7 @@ __all__ = [
     "Counteragent",
     "Contract",
     "Project",
+    "DocumentApproval",
     "tag_categories",
     "document_tags",
 ]

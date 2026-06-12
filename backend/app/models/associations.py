@@ -42,6 +42,22 @@ contract_documents = Table(
     ),
 )
 
+# Договоры <-> Участники (пользователи) (M:M, Задача 11)
+contract_participants = Table(
+    "contract_participants",
+    Base.metadata,
+    Column(
+        "contract_id",
+        ForeignKey("contracts.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "user_id",
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
+
 # Проекты <-> Договоры (M:M, Задача 10)
 project_contracts = Table(
     "project_contracts",

@@ -4,6 +4,7 @@ from decimal import Decimal
 from pydantic import BaseModel, Field, field_validator
 
 from app.models.contract import CONTRACT_STATUSES
+from app.schemas.project import UserBrief
 
 
 class CounteragentBrief(BaseModel):
@@ -42,10 +43,12 @@ class ContractBase(BaseModel):
 
 class ContractCreate(ContractBase):
     document_ids: list[int] = Field(default_factory=list)
+    participant_ids: list[int] = Field(default_factory=list)
 
 
 class ContractUpdate(ContractBase):
     document_ids: list[int] = Field(default_factory=list)
+    participant_ids: list[int] = Field(default_factory=list)
 
 
 class ContractOut(ContractBase):
@@ -53,5 +56,26 @@ class ContractOut(ContractBase):
     created_at: datetime
     counteragent: CounteragentBrief | None = None
     documents: list[DocumentBrief] = Field(default_factory=list)
+    participants: list[UserBrief] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
+
+
+# ---- Согласование (Задача 11) ----
+class ParticipantApprovalOut(BaseModel):
+    user: UserBrief
+    approved: bool
+    approved_at: datetime | None = None
+
+
+class DocumentApprovalOut(BaseModel):
+    document: DocumentBrief
+    participants: list[ParticipantApprovalOut]
+    approved_count: int
+    total: int
+
+
+class ContractApprovalOut(BaseModel):
+    contract_id: int
+    current_user_is_participant: bool
+    documents: list[DocumentApprovalOut]

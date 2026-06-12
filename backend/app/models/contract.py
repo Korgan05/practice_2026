@@ -7,7 +7,7 @@ from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-from app.models.associations import contract_documents
+from app.models.associations import contract_documents, contract_participants
 
 # Допустимые статусы договора
 CONTRACT_STATUSES = ("draft", "active", "completed")
@@ -39,6 +39,9 @@ class Contract(Base):
 
     # Прикреплённые документы (Задача 9) — файлы с тегом «Договор»
     documents: Mapped[list["Document"]] = relationship(secondary=contract_documents)
+
+    # Участники договора (Задача 11)
+    participants: Mapped[list["User"]] = relationship(secondary=contract_participants)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
