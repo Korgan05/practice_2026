@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { api, ApiError, Counteragent, CounteragentInput } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
 
 const EMPTY: CounteragentInput = {
   name: "",
@@ -13,6 +14,7 @@ const EMPTY: CounteragentInput = {
 };
 
 export default function CounteragentsPage() {
+  const { user, isAdmin, hasRole } = useAuth();
   const [items, setItems] = useState<Counteragent[]>([]);
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +96,10 @@ export default function CounteragentsPage() {
   const set = (k: keyof CounteragentInput) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  // Права: редактировать/удалять могут автор записи и администратор.
+  const canEdit = (c: Counteragent) =>
+    isAdmin || (c.created_by_id != null && c.created_by_id === user?.id);
+
   return (
     <div className="page">
       <h1>Контрагенты</h1>
@@ -110,9 +116,11 @@ export default function CounteragentsPage() {
         <button className="btn-secondary" onClick={() => load(search)}>
           Найти
         </button>
-        <button className="btn-primary" onClick={startCreate}>
-          + Добавить
-        </button>
+        {hasRole && (
+          <button className="btn-primary" onClick={startCreate}>
+            + Добавить
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -183,12 +191,16 @@ export default function CounteragentsPage() {
               <td>{c.phone || "—"}</td>
               <td>{c.email || "—"}</td>
               <td className="row-actions">
-                <button className="btn-link" onClick={() => startEdit(c)}>
-                  Редактировать
-                </button>
-                <button className="btn-link danger" onClick={() => handleDelete(c)}>
-                  Удалить
-                </button>
+                {canEdit(c) && (
+                  <>
+                    <button className="btn-link" onClick={() => startEdit(c)}>
+                      Редактировать
+                    </button>
+                    <button className="btn-link danger" onClick={() => handleDelete(c)}>
+                      Удалить
+                    </button>
+                  </>
+                )}
               </td>
             </tr>
           ))}

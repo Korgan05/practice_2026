@@ -28,6 +28,11 @@ class User(Base):
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)  # Телефон
     birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)  # Дата рождения
 
+    # Всегда добавлять в список согласования (Задача 12) — согласующий
+    always_in_approval: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+
     role_id: Mapped[int | None] = mapped_column(
         ForeignKey("roles.id", ondelete="SET NULL"), nullable=True
     )

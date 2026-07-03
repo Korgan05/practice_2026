@@ -11,6 +11,7 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
+  hasRole: boolean; // есть назначенная роль (иначе — только просмотр)
   login: (login: string, password: string) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
@@ -55,9 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const isAdmin = user?.role?.name === ADMIN_ROLE;
+  const hasRole = user?.role != null;
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin, login, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, hasRole, login, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

@@ -77,6 +77,7 @@ export interface User {
   department: string | null;
   phone: string | null;
   birth_date: string | null;
+  always_in_approval: boolean;
 }
 
 export interface ProfileUpdate {
@@ -85,6 +86,7 @@ export interface ProfileUpdate {
   department?: string | null;
   phone?: string | null;
   birth_date?: string | null;
+  always_in_approval?: boolean;
 }
 
 export interface TokenOut {
@@ -111,6 +113,7 @@ export interface DocumentItem {
   size: number;
   created_at: string;
   uploaded_by: string | null;
+  uploaded_by_id: number | null;
   tags: DocTag[];
 }
 
@@ -129,9 +132,10 @@ export interface Counteragent {
   email: string | null;
   bank_details: string | null;
   created_at: string;
+  created_by_id: number | null;
 }
 
-export type CounteragentInput = Omit<Counteragent, "id" | "created_at">;
+export type CounteragentInput = Omit<Counteragent, "id" | "created_at" | "created_by_id">;
 
 export interface UserBrief {
   id: number;
@@ -159,6 +163,7 @@ export interface Project {
   manager: { id: number; full_name: string } | null;
   contracts: { id: number; number: string }[];
   created_at: string;
+  created_by_id: number | null;
 }
 
 export interface ProjectInput {
@@ -196,24 +201,26 @@ export interface Contract {
   created_at: string;
   documents: { id: number; original_filename: string }[];
   participants: UserBrief[];
+  created_by_id: number | null;
 }
 
-export interface ParticipantApproval {
+export interface SignerStatus {
   user: UserBrief;
-  approved: boolean;
-  approved_at: string | null;
+  done: boolean;
+  at: string | null;
 }
 
 export interface DocumentApproval {
   document: { id: number; original_filename: string };
-  participants: ParticipantApproval[];
-  approved_count: number;
-  total: number;
+  approvers: SignerStatus[]; // согласование (флаг-пользователи)
+  acknowledgers: SignerStatus[]; // ознакомление (участники)
 }
 
 export interface ContractApproval {
   contract_id: number;
+  current_user_can_approve: boolean;
   current_user_is_participant: boolean;
+  current_user_acknowledged: boolean;
   documents: DocumentApproval[];
 }
 
@@ -339,6 +346,11 @@ export const api = {
       `/contracts/${contractId}/documents/${docId}/approve`,
       { method: "POST" }
     ),
+
+  acknowledgeContract: (contractId: number) =>
+    request<ContractApproval>(`/contracts/${contractId}/acknowledge`, {
+      method: "POST",
+    }),
 
   // ---- Проекты (Задача 10) ----
   listUsersBrief: () => request<UserBrief[]>("/users/brief"),

@@ -43,6 +43,12 @@ class Contract(Base):
     # Участники договора (Задача 11)
     participants: Mapped[list["User"]] = relationship(secondary=contract_participants)
 
+    # Автор записи — для контроля прав редактирования
+    created_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_by: Mapped["User | None"] = relationship(foreign_keys=[created_by_id])
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

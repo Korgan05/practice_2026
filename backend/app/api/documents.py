@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, require_role
 from app.database import get_db
 from app.models import Document, Tag, User
 from app.models.associations import document_tags
@@ -33,6 +33,7 @@ def _to_out(doc: Document) -> DocumentOut:
         size=doc.size,
         created_at=doc.created_at,
         uploaded_by=doc.uploaded_by.login if doc.uploaded_by else None,
+        uploaded_by_id=doc.uploaded_by_id,
         tags=doc.tags,  # type: ignore[arg-type]  # валидируется from_attributes
     )
 
@@ -62,7 +63,7 @@ def upload_document(
     file: UploadFile = File(...),
     tag_ids: str = Form(..., description="ID тегов через запятую"),
     db: Session = Depends(get_db),
-    current: User = Depends(get_current_user),
+    current: User = Depends(require_role),
 ) -> DocumentOut:
     # Валидация формата
     if not storage.is_allowed(file.filename or ""):

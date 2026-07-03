@@ -40,6 +40,7 @@ class DocumentOut(BaseModel):
     size: int
     created_at: datetime
     uploaded_by: str | None = None
+    uploaded_by_id: int | None = None
     tags: list[TagOut] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}

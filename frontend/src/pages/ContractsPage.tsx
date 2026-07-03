@@ -31,7 +31,7 @@ const EMPTY: ContractInput = {
 };
 
 export default function ContractsPage() {
-  const { user } = useAuth();
+  const { user, isAdmin, hasRole } = useAuth();
   const [items, setItems] = useState<Contract[]>([]);
   const [counteragents, setCounteragents] = useState<Counteragent[]>([]);
   const [search, setSearch] = useState("");
@@ -52,6 +52,7 @@ export default function ContractsPage() {
   const [users, setUsers] = useState<UserBrief[]>([]);
   const [approval, setApproval] = useState<ContractApproval | null>(null);
   const [approvalNumber, setApprovalNumber] = useState<string>("");
+  const [showAckConfirm, setShowAckConfirm] = useState(false);
 
   async function reloadDogovorDocs(tagId: number | null) {
     if (tagId == null) return;
@@ -140,6 +141,18 @@ export default function ContractsPage() {
     }
   }
 
+  async function acknowledge() {
+    if (approval == null) return;
+    try {
+      const updated = await api.acknowledgeContract(approval.contract_id);
+      setApproval(updated);
+      setShowAckConfirm(false);
+    } catch (e) {
+      setError((e as ApiError).message);
+      setShowAckConfirm(false);
+    }
+  }
+
   function toggleDoc(id: number) {
     setForm((f) => ({
       ...f,
@@ -198,6 +211,15 @@ export default function ContractsPage() {
     }
   }
 
+  // Права: редактировать могут автор, участники договора и администратор;
+  // удалять — автор и администратор.
+  const canEdit = (c: Contract) =>
+    isAdmin ||
+    (c.created_by_id != null && c.created_by_id === user?.id) ||
+    c.participants.some((p) => p.id === user?.id);
+  const canDelete = (c: Contract) =>
+    isAdmin || (c.created_by_id != null && c.created_by_id === user?.id);
+
   const set =
     (k: keyof ContractInput) =>
     (e: { target: { value: string } }) =>
@@ -219,9 +241,11 @@ export default function ContractsPage() {
         <button className="btn-secondary" onClick={() => load(search)}>
           Найти
         </button>
-        <button className="btn-primary" onClick={startCreate}>
-          + Добавить
-        </button>
+        {hasRole && (
+          <button className="btn-primary" onClick={startCreate}>
+            + Добавить
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -379,55 +403,116 @@ export default function ContractsPage() {
       {approval && (
         <div className="modal-overlay" onClick={() => setApproval(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Согласование документов — {approvalNumber}</h2>
-            {!approval.current_user_is_participant && (
+            <h2>Документы договора — {approvalNumber}</h2>
+            {!approval.current_user_can_approve && !approval.current_user_is_participant && (
               <div className="muted">
-                Вы не участник этого договора — согласование недоступно (только просмотр).
+                Вы не согласующий и не участник этого договора — только просмотр.
               </div>
             )}
             {approval.documents.length === 0 && (
               <div className="muted">К договору не прикреплены документы.</div>
             )}
+
             {approval.documents.map((doc) => {
-              const myApproved = doc.participants.some(
-                (p) => p.user.id === user?.id && p.approved
+              const myApproved = doc.approvers.some(
+                (s) => s.user.id === user?.id && s.done
               );
               return (
                 <div key={doc.document.id} className="approval-doc">
                   <div className="approval-doc-head">
                     <b>{doc.document.original_filename}</b>
-                    <span className="muted">
-                      согласовали {doc.approved_count} из {doc.total}
-                    </span>
                   </div>
-                  <ul className="approval-list">
-                    {doc.participants.map((p) => (
-                      <li key={p.user.id} className={p.approved ? "ok" : ""}>
-                        {p.approved ? "✓" : "•"} {p.user.full_name}
-                        {p.approved_at && (
-                          <span className="muted">
-                            {" "}
-                            ({new Date(p.approved_at).toLocaleString("ru-RU")})
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                  {approval.current_user_is_participant && (
-                    <button
-                      className="btn-primary"
-                      disabled={myApproved}
-                      onClick={() => approveDoc(doc.document.id)}
-                    >
-                      {myApproved ? "Вы согласовали" : "Согласовать"}
-                    </button>
-                  )}
+
+                  {/* Согласование (флаг-пользователи) */}
+                  <div className="signoff-block">
+                    <div className="field-label">
+                      Согласование (
+                      {doc.approvers.filter((s) => s.done).length}/{doc.approvers.length})
+                    </div>
+                    <ul className="approval-list">
+                      {doc.approvers.map((s) => (
+                        <li key={s.user.id} className={s.done ? "ok" : ""}>
+                          {s.done ? "✓" : "•"} {s.user.full_name}
+                          {s.at && (
+                            <span className="muted">
+                              {" "}({new Date(s.at).toLocaleString("ru-RU")})
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                      {doc.approvers.length === 0 && (
+                        <li className="muted">Нет согласующих (включите флаг в профиле)</li>
+                      )}
+                    </ul>
+                    {approval.current_user_can_approve && (
+                      <button
+                        className="btn-primary"
+                        disabled={myApproved}
+                        onClick={() => approveDoc(doc.document.id)}
+                      >
+                        {myApproved ? "Вы согласовали" : "Согласовать"}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Ознакомление (участники) */}
+                  <div className="signoff-block">
+                    <div className="field-label">
+                      Ознакомление участников (
+                      {doc.acknowledgers.filter((s) => s.done).length}/
+                      {doc.acknowledgers.length})
+                    </div>
+                    <ul className="approval-list">
+                      {doc.acknowledgers.map((s) => (
+                        <li key={s.user.id} className={s.done ? "ok" : ""}>
+                          {s.done ? "✓" : "•"} {s.user.full_name}
+                          {s.at && (
+                            <span className="muted">
+                              {" "}({new Date(s.at).toLocaleString("ru-RU")})
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               );
             })}
+
+            {/* Кнопка ознакомления для участников (Задача 12) */}
             <div className="actions">
+              {approval.current_user_is_participant && (
+                <button
+                  className="btn-primary"
+                  disabled={approval.current_user_acknowledged}
+                  onClick={() => setShowAckConfirm(true)}
+                >
+                  {approval.current_user_acknowledged ? "Вы ознакомлены" : "Ознакомиться"}
+                </button>
+              )}
               <button className="btn-secondary" onClick={() => setApproval(null)}>
                 Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Подтверждение ознакомления (Задача 12) */}
+      {showAckConfirm && (
+        <div className="modal-overlay" onClick={() => setShowAckConfirm(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Подтверждение ознакомления</h2>
+            <p className="modal-text">
+              Вы подтверждаете своё согласие со всеми аспектами Договора и обязуетесь
+              выполнить все работы в срок указанный в договоре.
+            </p>
+            <div className="actions">
+              <button className="btn-primary" onClick={acknowledge}>
+                Подтверждаю
+              </button>
+              <button className="btn-secondary" onClick={() => setShowAckConfirm(false)}>
+                Отмена
               </button>
             </div>
           </div>
@@ -475,12 +560,16 @@ export default function ContractsPage() {
                 <button className="btn-link" onClick={() => openApprovals(c)}>
                   Согласование
                 </button>
-                <button className="btn-link" onClick={() => startEdit(c)}>
-                  Редактировать
-                </button>
-                <button className="btn-link danger" onClick={() => handleDelete(c)}>
-                  Удалить
-                </button>
+                {canEdit(c) && (
+                  <button className="btn-link" onClick={() => startEdit(c)}>
+                    Редактировать
+                  </button>
+                )}
+                {canDelete(c) && (
+                  <button className="btn-link danger" onClick={() => handleDelete(c)}>
+                    Удалить
+                  </button>
+                )}
               </td>
             </tr>
           ))}

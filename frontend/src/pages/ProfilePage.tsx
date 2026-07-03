@@ -10,6 +10,9 @@ export default function ProfilePage() {
   const [department, setDepartment] = useState(user?.department ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [birthDate, setBirthDate] = useState(user?.birth_date ?? "");
+  const [alwaysInApproval, setAlwaysInApproval] = useState(
+    user?.always_in_approval ?? false
+  );
 
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -27,6 +30,7 @@ export default function ProfilePage() {
         department: department.trim() || null,
         phone: phone.trim() || null,
         birth_date: birthDate || null,
+        always_in_approval: alwaysInApproval,
       });
       await refresh();
       setInfo("Профиль сохранён");
@@ -78,6 +82,15 @@ export default function ProfilePage() {
         <label className="field">
           <span>Дата рождения</span>
           <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+        </label>
+
+        <label className="checkbox-field">
+          <input
+            type="checkbox"
+            checked={alwaysInApproval}
+            onChange={(e) => setAlwaysInApproval(e.target.checked)}
+          />
+          <span>Всегда добавлять в список согласования</span>
         </label>
 
         <button className="btn-primary" type="submit" disabled={saving}>

@@ -47,6 +47,7 @@ class ProjectUpdate(ProjectBase):
 class ProjectOut(ProjectBase):
     id: int
     created_at: datetime
+    created_by_id: int | None = None
     manager: UserBrief | None = None
     contracts: list[ContractBrief] = Field(default_factory=list)
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.api.deps import get_current_user
+from app.api.deps import ensure_can_edit, get_current_user, require_role
 from app.database import get_db
 from app.models import Contract, Project, User
 from app.schemas.project import ProjectCreate, ProjectOut, ProjectUpdate
@@ -51,11 +51,15 @@ def get_project(project_id: int, db: Session = Depends(get_db)) -> Project:
 
 
 @router.post("", response_model=ProjectOut, status_code=201)
-def create_project(payload: ProjectCreate, db: Session = Depends(get_db)) -> Project:
+def create_project(
+    payload: ProjectCreate,
+    db: Session = Depends(get_db),
+    current: User = Depends(require_role),
+) -> Project:
     _check_manager(db, payload.manager_id)
     data = payload.model_dump()
     contract_ids = data.pop("contract_ids", [])
-    project = Project(**data)
+    project = Project(**data, created_by_id=current.id)
     project.contracts = _resolve_contracts(db, contract_ids)
     db.add(project)
     db.commit()
@@ -65,11 +69,16 @@ def create_project(payload: ProjectCreate, db: Session = Depends(get_db)) -> Pro
 
 @router.put("/{project_id}", response_model=ProjectOut)
 def update_project(
-    project_id: int, payload: ProjectUpdate, db: Session = Depends(get_db)
+    project_id: int,
+    payload: ProjectUpdate,
+    db: Session = Depends(get_db),
+    current: User = Depends(require_role),
 ) -> Project:
     project = db.get(Project, project_id)
     if project is None:
         raise HTTPException(status_code=404, detail="Проект не найден")
+    # Редактировать могут: автор, руководитель проекта, администратор
+    ensure_can_edit(current, project.created_by_id, project.manager_id)
     _check_manager(db, payload.manager_id)
     data = payload.model_dump()
     contract_ids = data.pop("contract_ids", [])
@@ -82,9 +91,15 @@ def update_project(
 
 
 @router.delete("/{project_id}", status_code=204)
-def delete_project(project_id: int, db: Session = Depends(get_db)) -> None:
+def delete_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current: User = Depends(require_role),
+) -> None:
     project = db.get(Project, project_id)
     if project is None:
         raise HTTPException(status_code=404, detail="Проект не найден")
+    # Удалять могут только автор и администратор
+    ensure_can_edit(current, project.created_by_id)
     db.delete(project)
     db.commit()

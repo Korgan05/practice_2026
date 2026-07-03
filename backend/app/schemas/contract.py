@@ -54,6 +54,7 @@ class ContractUpdate(ContractBase):
 class ContractOut(ContractBase):
     id: int
     created_at: datetime
+    created_by_id: int | None = None
     counteragent: CounteragentBrief | None = None
     documents: list[DocumentBrief] = Field(default_factory=list)
     participants: list[UserBrief] = Field(default_factory=list)
@@ -61,21 +62,22 @@ class ContractOut(ContractBase):
     model_config = {"from_attributes": True}
 
 
-# ---- Согласование (Задача 11) ----
-class ParticipantApprovalOut(BaseModel):
+# ---- Согласование (Задача 11) / Ознакомление (Задача 12) ----
+class SignerStatusOut(BaseModel):
     user: UserBrief
-    approved: bool
-    approved_at: datetime | None = None
+    done: bool
+    at: datetime | None = None
 
 
 class DocumentApprovalOut(BaseModel):
     document: DocumentBrief
-    participants: list[ParticipantApprovalOut]
-    approved_count: int
-    total: int
+    approvers: list[SignerStatusOut]       # согласование (флаг-пользователи)
+    acknowledgers: list[SignerStatusOut]   # ознакомление (участники)
 
 
 class ContractApprovalOut(BaseModel):
     contract_id: int
+    current_user_can_approve: bool         # имеет флаг «всегда в списке согласования»
     current_user_is_participant: bool
+    current_user_acknowledged: bool        # ознакомился со всеми документами
     documents: list[DocumentApprovalOut]

@@ -28,13 +28,24 @@ export default function LoginPage() {
   return (
     <div className="app-shell">
       <form className="card" onSubmit={handleLogin}>
-        <h1>Вход</h1>
+        <div className="auth-brand">
+          <span className="logo-mark">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9" />
+              <path d="M12 7v5l3 2" />
+            </svg>
+          </span>
+          <span className="brand-name">Контур</span>
+        </div>
+        <h1>Вход в систему</h1>
+        <p className="subtitle">Управление договорами, документами и проектами</p>
 
         <label className="field">
-          <span>Логин</span>
+          <span>Логин или почта</span>
           <input
             value={loginValue}
             onChange={(e) => setLoginValue(e.target.value)}
+            placeholder="sakauovk05 или sakauovk05@gmail.com"
             autoComplete="username"
           />
         </label>

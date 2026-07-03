@@ -9,6 +9,7 @@ import {
   PROJECT_STATUS_LABELS,
   UserBrief,
 } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
 
 const EMPTY: ProjectInput = {
   name: "",
@@ -22,6 +23,7 @@ const EMPTY: ProjectInput = {
 };
 
 export default function ProjectsPage() {
+  const { user, isAdmin, hasRole } = useAuth();
   const [items, setItems] = useState<Project[]>([]);
   const [users, setUsers] = useState<UserBrief[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -118,6 +120,15 @@ export default function ProjectsPage() {
     }
   }
 
+  // Права: редактировать могут автор, руководитель проекта и администратор;
+  // удалять — автор и администратор.
+  const canEdit = (p: Project) =>
+    isAdmin ||
+    (p.created_by_id != null && p.created_by_id === user?.id) ||
+    (p.manager_id != null && p.manager_id === user?.id);
+  const canDelete = (p: Project) =>
+    isAdmin || (p.created_by_id != null && p.created_by_id === user?.id);
+
   const set =
     (k: keyof ProjectInput) =>
     (e: { target: { value: string } }) =>
@@ -139,9 +150,11 @@ export default function ProjectsPage() {
         <button className="btn-secondary" onClick={() => load(search)}>
           Найти
         </button>
-        <button className="btn-primary" onClick={startCreate}>
-          + Добавить
-        </button>
+        {hasRole && (
+          <button className="btn-primary" onClick={startCreate}>
+            + Добавить
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -272,12 +285,16 @@ export default function ProjectsPage() {
                 {p.start_date || "—"} … {p.end_date || "—"}
               </td>
               <td className="row-actions">
-                <button className="btn-link" onClick={() => startEdit(p)}>
-                  Редактировать
-                </button>
-                <button className="btn-link danger" onClick={() => handleDelete(p)}>
-                  Удалить
-                </button>
+                {canEdit(p) && (
+                  <button className="btn-link" onClick={() => startEdit(p)}>
+                    Редактировать
+                  </button>
+                )}
+                {canDelete(p) && (
+                  <button className="btn-link danger" onClick={() => handleDelete(p)}>
+                    Удалить
+                  </button>
+                )}
               </td>
             </tr>
           ))}

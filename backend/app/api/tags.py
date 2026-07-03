@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, require_role
 from app.database import get_db
 from app.models import Category, Tag
 from app.models.associations import tag_categories
@@ -39,7 +39,9 @@ def list_tags(
     return list(db.scalars(stmt.order_by(Tag.name)).all())
 
 
-@router.post("", response_model=TagOut, status_code=201)
+@router.post(
+    "", response_model=TagOut, status_code=201, dependencies=[Depends(require_role)]
+)
 def create_tag(payload: TagCreate, db: Session = Depends(get_db)) -> Tag:
     name = payload.name.strip()
     if db.scalar(select(Tag).where(Tag.name == name)):
@@ -51,7 +53,9 @@ def create_tag(payload: TagCreate, db: Session = Depends(get_db)) -> Tag:
     return tag
 
 
-@router.put("/{tag_id}/categories", response_model=TagOut)
+@router.put(
+    "/{tag_id}/categories", response_model=TagOut, dependencies=[Depends(require_role)]
+)
 def set_tag_categories(
     tag_id: int, payload: TagCategoriesUpdate, db: Session = Depends(get_db)
 ) -> Tag:

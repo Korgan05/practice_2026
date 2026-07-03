@@ -36,3 +36,32 @@ def require_admin(current: User = Depends(get_current_user)) -> User:
             detail="Требуется роль «Администратор»",
         )
     return current
+
+
+def require_role(current: User = Depends(get_current_user)) -> User:
+    """Изменять данные могут только пользователи с назначенной ролью.
+
+    Пользователи без роли имеют доступ «только просмотр»."""
+    if current.role is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="У вас нет роли — доступ только для просмотра. "
+            "Обратитесь к администратору для назначения роли.",
+        )
+    return current
+
+
+def is_admin(user: User) -> bool:
+    return user.role is not None and user.role.name == ADMIN_ROLE
+
+
+def ensure_can_edit(current: User, owner_id: int | None, *extra_user_ids: int) -> None:
+    """Редактировать/удалять запись могут: автор, явно разрешённые пользователи
+    (участники договора / руководитель проекта) и Администратор."""
+    allowed = {owner_id, *extra_user_ids} - {None}
+    if is_admin(current) or current.id in allowed:
+        return
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Недостаточно прав: изменять запись может автор, её участники или администратор",
+    )

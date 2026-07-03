@@ -62,6 +62,8 @@ class UserOut(BaseModel):
     department: str | None = None
     phone: str | None = None
     birth_date: date | None = None
+    # Согласование (Задача 12)
+    always_in_approval: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -76,3 +78,4 @@ class ProfileUpdate(BaseModel):
     department: str | None = Field(default=None, max_length=150)
     phone: str | None = Field(default=None, max_length=50)
     birth_date: date | None = None
+    always_in_approval: bool | None = None

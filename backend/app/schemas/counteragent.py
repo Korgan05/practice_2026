@@ -25,5 +25,6 @@ class CounteragentUpdate(CounteragentBase):
 class CounteragentOut(CounteragentBase):
     id: int
     created_at: datetime
+    created_by_id: int | None = None
 
     model_config = {"from_attributes": True}
